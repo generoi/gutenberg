@@ -852,9 +852,10 @@ export class RichText extends Component {
 			formatters,
 			autocompleters,
 			format,
+			ariaMultiline = true,
 		} = this.props;
 
-		const ariaProps = { ...pickAriaProps( this.props ), 'aria-multiline': !! MultilineTag };
+		const ariaProps = { ...pickAriaProps( this.props ), 'aria-multiline': ariaMultiline };
 
 		// Generating a key that includes `tagName` ensures that if the tag
 		// changes, we unmount and destroy the previous TinyMCE element, then
