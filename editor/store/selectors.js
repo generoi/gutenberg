@@ -155,7 +155,7 @@ export function getCurrentPostId( state ) {
  * @return {number} Number of revisions.
  */
 export function getCurrentPostRevisionsCount( state ) {
-	return get( getCurrentPost( state ), [ 'revisions', 'count' ], 0 );
+	return get( getCurrentPost( state ), [ '_links', 'version-history', 0, 'count' ], 0 );
 }
 
 /**
@@ -167,7 +167,7 @@ export function getCurrentPostRevisionsCount( state ) {
  * @return {?number} ID of the last revision.
  */
 export function getCurrentPostLastRevisionId( state ) {
-	return get( getCurrentPost( state ), [ 'revisions', 'last_id' ], null );
+	return get( getCurrentPost( state ), [ '_links', 'predecessor-version', 0, 'id' ], null );
 }
 
 /**
@@ -179,7 +179,22 @@ export function getCurrentPostLastRevisionId( state ) {
  * @return {Object} Object of key value pairs comprising unsaved edits.
  */
 export function getPostEdits( state ) {
-	return get( state, [ 'editor', 'present', 'edits' ], {} );
+	return state.editor.present.edits;
+}
+
+/**
+ * Returns an attribute value of the saved post.
+ *
+ * @param {Object} state         Global application state.
+ * @param {string} attributeName Post attribute name.
+ *
+ * @return {*} Post attribute value.
+ */
+export function getCurrentPostAttribute( state, attributeName ) {
+	const post = getCurrentPost( state );
+	if ( post.hasOwnProperty( attributeName ) ) {
+		return post[ attributeName ];
+	}
 }
 
 /**
@@ -201,9 +216,31 @@ export function getEditedPostAttribute( state, attributeName ) {
 			return getEditedPostContent( state );
 	}
 
-	return edits[ attributeName ] === undefined ?
-		state.currentPost[ attributeName ] :
-		edits[ attributeName ];
+	if ( ! edits.hasOwnProperty( attributeName ) ) {
+		return getCurrentPostAttribute( state, attributeName );
+	}
+
+	return edits[ attributeName ];
+}
+
+/**
+ * Returns an attribute value of the current autosave revision for a post, or
+ * null if there is no autosave for the post.
+ *
+ * @param {Object} state         Global application state.
+ * @param {string} attributeName Autosave attribute name.
+ *
+ * @return {*} Autosave attribute value.
+ */
+export function getAutosaveAttribute( state, attributeName ) {
+	if ( ! hasAutosave( state ) ) {
+		return null;
+	}
+
+	const autosave = getAutosave( state );
+	if ( autosave.hasOwnProperty( attributeName ) ) {
+		return autosave[ attributeName ];
+	}
 }
 
 /**
@@ -405,35 +442,6 @@ export function getDocumentTitle( state ) {
 		title = isCleanNewPost( state ) ? __( 'New post' ) : __( '(Untitled)' );
 	}
 	return title;
-}
-
-/**
- * Returns the raw excerpt of the post being edited, preferring the unsaved
- * value if different than the saved post.
- *
- * @param {Object} state Global application state.
- *
- * @return {string} Raw post excerpt.
- */
-export function getEditedPostExcerpt( state ) {
-	deprecated( 'getEditedPostExcerpt', {
-		version: '3.1',
-		alternative: 'getEditedPostAttribute( state, \'excerpt\' )',
-		plugin: 'Gutenberg',
-	} );
-
-	return getEditedPostAttribute( state, 'excerpt' );
-}
-
-/**
- * Returns a URL to preview the post being edited.
- *
- * @param {Object} state Global application state.
- *
- * @return {string} Preview URL.
- */
-export function getEditedPostPreviewLink( state ) {
-	return getCurrentPost( state ).preview_link || null;
 }
 
 /**
